@@ -1,0 +1,299 @@
+{
+  "EDITOR_STATE": {
+    "allProjectFiles": {
+      "6b62ae10-8931-47a3-baa6-958f52e066f8": {
+        "id": "6b62ae10-8931-47a3-baa6-958f52e066f8",
+        "parent": null,
+        "name": "simple-authenticator-sigma-sample",
+        "type": "DIRECTORY",
+        "isDirectory": true,
+        "children": [
+          "b25cfaa4-4d44-4464-83f9-5b8ff3d06549",
+          "4a2466e7-d4da-40a4-b57c-d0cb6aa6b0b4",
+          "ef6a3550-9c0a-44a1-a422-dbb21d93168c",
+          "178ae155-0d8e-4f73-8326-90a0f93d35b8",
+          "b3c9628d-1f44-476d-a61c-eba6b6387af2"
+        ],
+        "isRemovable": false,
+        "filePath": "simple-authenticator-sigma-sample"
+      },
+      "b25cfaa4-4d44-4464-83f9-5b8ff3d06549": {
+        "id": "b25cfaa4-4d44-4464-83f9-5b8ff3d06549",
+        "parent": "6b62ae10-8931-47a3-baa6-958f52e066f8",
+        "name": "signup-lambda.js",
+        "type": "JS_LAMBDA",
+        "isDirectory": false,
+        "children": [],
+        "isRemovable": true,
+        "filePath": "simple-authenticator-sigma-sample/signup-lambda.js",
+        "code": "let AWS = require('aws-sdk');\nlet connectionManager = require('./ConnectionManager');\nlet SL_AWS = require('slappforge-sdk-aws');\nconst rds = new SL_AWS.RDS(connectionManager);\n\nexports.handler = function (event, context, callback) {\n let response;\n\tlet inserts = [event.email, event.password, event.lastName, event.firstName, event.address]; \n\n\t// You can pass the existing connection to this function.\n\t// A new connection will be created if it's not present as the third param \n\t// You must always end the DB connection after it's used\n\trds.query({\n\t\tinstanceIdentifier: 'authDatabase',\n\t\tquery: 'INSERT INTO users (Email, Password, LastName, FirstName, Address) VALUES (?, ?, ?, ?, ?);',\n\t\tinserts: inserts\n\t}, function (error, results, connection) {\n\t\tif (error) {\n\t\t\tresponse = error;\n\t\t\tthrow error;\n\t\t} else {\n\t\t\tresponse = \"Successfully added a new user with email\";\n\t\t\tconsole.log(results);\n\t\t}\n\t\tconnection.end();\n\t\tcallback(null, response);\n\t});\n}",
+        "triggers": [
+          {
+            "resourceName": "apigusEast1authApisignuppost",
+            "config": {}
+          }
+        ],
+        "config": {
+          "runtime": "nodejs8.10",
+          "handler": "handler",
+          "timeout": 60,
+          "memory": 128,
+          "layers": []
+        }
+      },
+      "4a2466e7-d4da-40a4-b57c-d0cb6aa6b0b4": {
+        "id": "4a2466e7-d4da-40a4-b57c-d0cb6aa6b0b4",
+        "parent": "6b62ae10-8931-47a3-baa6-958f52e066f8",
+        "name": "ConnectionManager.js",
+        "type": "JS_FILE",
+        "isDirectory": false,
+        "children": [],
+        "isRemovable": true,
+        "filePath": "simple-authenticator-sigma-sample/ConnectionManager.js",
+        "code": "module.exports = function () {\n    this.dbConnections = [];\n    this.dbConnections[\"authDatabase\"] = {\n        host: process.env.EndPoint_rdsAuthDatabase,\n        port: process.env.Port_rdsAuthDatabase,\n        user: process.env.User_rdsAuthDatabase,\n        password: process.env.Password_rdsAuthDatabase,\n        database: \"authDatabase\"\n    };\n};",
+        "triggers": []
+      },
+      "ef6a3550-9c0a-44a1-a422-dbb21d93168c": {
+        "id": "ef6a3550-9c0a-44a1-a422-dbb21d93168c",
+        "parent": "6b62ae10-8931-47a3-baa6-958f52e066f8",
+        "name": "signin-lambda.js",
+        "type": "JS_LAMBDA",
+        "isDirectory": false,
+        "children": [],
+        "isRemovable": true,
+        "filePath": "simple-authenticator-sigma-sample/signin-lambda.js",
+        "code": "let AWS = require('aws-sdk');\nlet connectionManager = require('./ConnectionManager');\nlet SL_AWS = require('slappforge-sdk-aws');\nconst rds = new SL_AWS.RDS(connectionManager);\n\nexports.handler = function (event, context, callback) {\n let successfullyLoggedIn = false;\n\tlet inserts = [event.email, event.password];\n\n\t// You can pass the existing connection to this function.\n\t// A new connection will be created if it's not present as the third param \n\t// You must always end the DB connection after it's used\n\trds.query({\n\t\tinstanceIdentifier: 'authDatabase',\n\t\tquery: 'SELECT * FROM users WHERE Email = ? AND Password = ?',\n\t\tinserts: inserts\n\t}, function (error, results, connection) {\n\t\tif (error) {\n\t\t\tthrow error;\n\t\t} else {\n\t\t\tsuccessfullyLoggedIn = results.length > 0;\n\t\t}\n\n\t\tconnection.end();\n\t\tcallback(null, successfullyLoggedIn);\n\t});\n}",
+        "triggers": [
+          {
+            "resourceName": "apigusEast1authApisigninpost",
+            "config": {
+              "selectedRegion": "us-east-1",
+              "apiMode": 0,
+              "apiName": "mobile-signin-sample-api",
+              "endpointType": "EDGE",
+              "resourceMode": 0,
+              "resourceName": "signin",
+              "resourcePath": "/signin",
+              "restMethod": "POST",
+              "proxyIntegration": false,
+              "stageMode": 0,
+              "stageName": "prod"
+            }
+          }
+        ],
+        "config": {
+          "runtime": "nodejs8.10",
+          "handler": "handler",
+          "timeout": 60,
+          "memory": 128,
+          "layers": []
+        }
+      },
+      "178ae155-0d8e-4f73-8326-90a0f93d35b8": {
+        "id": "178ae155-0d8e-4f73-8326-90a0f93d35b8",
+        "parent": "6b62ae10-8931-47a3-baa6-958f52e066f8",
+        "name": "wdw.py",
+        "type": "PYTHON_LAMBDA",
+        "isDirectory": false,
+        "children": [],
+        "isRemovable": true,
+        "filePath": "simple-authenticator-sigma-sample/wdw.py",
+        "code": "def handler(event, context):\n    \n    return {\"message\": \"Successfully executed\"}\n",
+        "config": {
+          "runtime": "python2.7",
+          "handler": "handler",
+          "timeout": 60,
+          "memory": 128,
+          "layers": []
+        },
+        "triggers": [
+          {
+            "resourceName": "apigusEast1SIGMA733testget",
+            "config": {}
+          }
+        ]
+      },
+      "b3c9628d-1f44-476d-a61c-eba6b6387af2": {
+        "id": "b3c9628d-1f44-476d-a61c-eba6b6387af2",
+        "parent": "6b62ae10-8931-47a3-baa6-958f52e066f8",
+        "name": "__init__.py",
+        "type": "PYTHON_FILE",
+        "isDirectory": false,
+        "children": [],
+        "isRemovable": true,
+        "filePath": "simple-authenticator-sigma-sample/__init__.py",
+        "code": ""
+      }
+    },
+    "rootNode": "6b62ae10-8931-47a3-baa6-958f52e066f8",
+    "openFiles": [
+      "b25cfaa4-4d44-4464-83f9-5b8ff3d06549",
+      "178ae155-0d8e-4f73-8326-90a0f93d35b8"
+    ],
+    "currentFileId": "178ae155-0d8e-4f73-8326-90a0f93d35b8",
+    "resources": {
+      "rds-authDatabase": {
+        "name": "rds-authDatabase",
+        "type": "RDS",
+        "config": {
+          "operation": 0,
+          "editMode": true,
+          "rdsInstance": {
+            "rdsEngineType": "mysql",
+            "rdsEdition": "",
+            "rdsInstanceSpec": {
+              "dbInstanceClass": "db.t2.micro",
+              "dbLicenseModel": "general-public-license",
+              "dbEngineVersion": "5.7.19"
+            },
+            "rdsSetting": {
+              "instanceIdentifier": "authDatabase",
+              "masterUsername": "rdsuser",
+              "masterPassword": "12345678"
+            },
+            "rdsDBOptions": {
+              "dbName": "authDatabase",
+              "dbPort": "3306"
+            },
+            "rdsInstanceArn": "",
+            "Host": "process.env.EndPoint_authDatabase",
+            "doesExist": false,
+            "initializationQuery": "CREATE TABLE users\n(\nUserId int NOT NULL AUTO_INCREMENT,\nEmail varchar(255) NOT NULL UNIQUE,\nPassword varchar(255) NOT NULL,\nLastName varchar(255),\nFirstName varchar(255),\nAddress varchar(255),\nPRIMARY KEY (UserId)\n);"
+          },
+          "rdsInstanceResources": [],
+          "mode": 0,
+          "projectRegion": "us-east-1",
+          "additionalFiles": [],
+          "params": {
+            "query": "INSERT INTO users (Email, Password, LastName, FirstName, Address) VALUES (?, ?, ?, ?, ?);",
+            "inserts": "\"randikanavagamuwa@gmail.com\",\"password\",\"Navagamuwa\",\"Randika\",\"Colombo\""
+          },
+          "isGlobalEditMode": false,
+          "enableInject": true,
+          "isNewFromGlobal": false
+        },
+        "globallyEditable": true
+      },
+      "apigusEast1authApisigninpost": {
+        "name": "apigusEast1authApisigninpost",
+        "type": "API_GATEWAY",
+        "config": {
+          "selectedRegion": "us-east-1",
+          "apiMode": 0,
+          "apiName": "auth-api",
+          "endpointType": "EDGE",
+          "resourceMode": 0,
+          "resourceName": "signin",
+          "resourcePath": "/signin",
+          "restMethod": "POST",
+          "proxyIntegration": false,
+          "stageMode": 0,
+          "stageName": "prod"
+        },
+        "globallyEditable": true
+      },
+      "apigusEast1authApisignuppost": {
+        "name": "apigusEast1authApisignuppost",
+        "type": "API_GATEWAY",
+        "config": {
+          "selectedRegion": "us-east-1",
+          "apiMode": 0,
+          "apiName": "auth-api",
+          "endpointType": "EDGE",
+          "resourceMode": 0,
+          "resourceName": "signup",
+          "resourcePath": "/signup",
+          "restMethod": "POST",
+          "proxyIntegration": false,
+          "stageMode": 0,
+          "stageName": "prod"
+        },
+        "globallyEditable": true
+      },
+      "apigusEast1SIGMA733testget": {
+        "name": "apigusEast1SIGMA733testget",
+        "type": "API_GATEWAY",
+        "config": {
+          "selectedRegion": "us-east-1",
+          "apiMode": 1,
+          "apiName": "SIGMA-733",
+          "apiId": "2ey3pzw7tg",
+          "endpointType": "EDGE",
+          "rootResourceId": "xlercklid0",
+          "existingResources": {
+            "/SIGMA-733": "4mkt7n",
+            "/testhiru": "kountn",
+            "/test002": "pyv6hl",
+            "/": "xlercklid0"
+          },
+          "resourceMode": 0,
+          "resourceName": "test",
+          "resourcePath": "/test",
+          "restMethod": "GET",
+          "proxyIntegration": false,
+          "enableCORS": false,
+          "stageMode": 0,
+          "stageName": "dd",
+          "mode": 1
+        }
+      }
+    },
+    "customTemplate": {
+      "dialect": null,
+      "definitions": null
+    },
+    "envVariables": [
+      {
+        "lambdaId": "all",
+        "varKey": "SIGMA_AWS_ACC_ID",
+        "varValue": null,
+        "editable": false,
+        "shouldPersist": false,
+        "displayOnly": false
+      },
+      {
+        "lambdaId": "178ae155-0d8e-4f73-8326-90a0f93d35b8",
+        "varKey": "PYTHONPATH",
+        "varValue": "/var/runtime:/var/task/simple-authenticator-sigma-sample",
+        "shouldPersist": true,
+        "displayOnly": false,
+        "editable": true
+      }
+    ],
+    "packageJSON": {
+      "dependencies": {
+        "aws-sdk": {
+          "name": "aws-sdk",
+          "version": "2.176.0",
+          "notRemovable": true,
+          "language": "javascript",
+          "dev": true
+        },
+        "slappforge-sdk-aws": {
+          "name": "slappforge-sdk-aws",
+          "version": "0.0.5",
+          "notRemovable": true,
+          "language": "javascript"
+        }
+      }
+    },
+    "additionalFiles": [],
+    "lambdaId": "b25cfaa4-4d44-4464-83f9-5b8ff3d06549"
+  },
+  "PROJECT_META": {
+    "projectName": "simple-authenticator-sigma-sample",
+    "projectDescription": "",
+    "projectVersion": "1.0.0",
+    "projectRegion": "us-east-1",
+    "platform": "AWS",
+    "platformRegions": {},
+    "lastSave": 1572497543177
+  },
+  "VCS_STATE": {
+    "provider": "GitHub",
+    "repo": {
+      "name": "simple-authenticator-sigma-sample",
+      "url": "https://github.com/zgma-test/simple-authenticator-sigma-sample"
+    }
+  }
+}
